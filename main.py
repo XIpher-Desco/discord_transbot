@@ -91,7 +91,7 @@ async def on_message(message):
 
         # 絵文字スタンプ削除
         trancslate_text = re.sub(r"\:[^:]*\:", "" ,trancslate_text)
-        trancslate_text = re.sub(r"\<[0-9]+\>", "" ,trancslate_text)
+        trancslate_text = re.sub(r"\<a*[0-9]+\>", "" ,trancslate_text)
         trancslate_text = trancslate_text.translate(NON_BMP_MAP)
 
         # 0文字になったら何も返さない
