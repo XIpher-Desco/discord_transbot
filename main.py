@@ -6,6 +6,7 @@ import discord
 import yaml
 import requests
 import codecs
+import re
 from apiclient import discovery
 from google.cloud import translate
 from google.oauth2.service_account import Credentials
@@ -81,7 +82,10 @@ async def on_message(message):
         return
 
     if message.channel.id in translate_channels:
-        deepl_payload['text'] = message.content
+        trancslate_text = re.sub(r"(https?|ftp)(:\/\/[-_\.!~*\'()a-zA-Z0-9;\/?:\@&=\+$,%#]+)", "" ,message.content)
+        if len(trancslate_text) == 0:
+            return
+        deepl_payload['text'] = trancslate_text
         r = requests.get("https://api-free.deepl.com/v2/translate", params=deepl_payload)
         deepl_payload['text'] = ""
         response_message = r.json()['translations'][0]['text']
