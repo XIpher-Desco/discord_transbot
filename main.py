@@ -83,6 +83,7 @@ async def on_message(message):
 
     if message.channel.id in translate_channels:
         trancslate_text = re.sub(r"(https?|ftp)(:\/\/[-_\.!~*\'()a-zA-Z0-9;\/?:\@&=\+$,%#]+)", "" ,message.content)
+        trancslate_text = re.sub(r"\:[^:]*\:", "" ,trancslate_text)
         if len(trancslate_text) == 0:
             return
         deepl_payload['text'] = trancslate_text
