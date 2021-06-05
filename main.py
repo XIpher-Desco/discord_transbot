@@ -86,9 +86,15 @@ async def on_message(message):
         return
 
     if message.channel.id in translate_channels:
+        # URL 削除
         trancslate_text = re.sub(r"(https?|ftp)(:\/\/[-_\.!~*\'()a-zA-Z0-9;\/?:\@&=\+$,%#]+)", "" ,message.content)
+
+        # 絵文字スタンプ削除
         trancslate_text = re.sub(r"\:[^:]*\:", "" ,trancslate_text)
+        trancslate_text = re.sub(r"\<[^>]*\>", "" ,trancslate_text)
         trancslate_text = trancslate_text.translate(NON_BMP_MAP)
+
+        # 0文字になったら何も返さない
         if len(trancslate_text) == 0:
             return
         deepl_payload['text'] = trancslate_text
