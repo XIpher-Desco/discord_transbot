@@ -7,6 +7,7 @@ import yaml
 import requests
 import codecs
 import re
+import sys
 from apiclient import discovery
 from google.cloud import translate
 from google.oauth2.service_account import Credentials
@@ -34,6 +35,9 @@ DEEPL_API_KEY = SECRET_DICT['DEEPL_API_KEY']
 CHANNEL_FILE_PATH = './channel_list.yaml'
 with open(CHANNEL_FILE_PATH) as f:
     translate_channels = yaml.safe_load(f)
+
+# 絵文字削除(BMP 外と呼ばれるヤツを消す魔法)
+NON_BMP_MAP = dict.fromkeys(range(0x10000, sys.maxunicode + 1), '')
 
 # メモ　https://developers.google.com/drive/api/v3/search-files ファイルのサーチワード（フォルダ指定含む）
 client = discord.Client()
@@ -84,6 +88,7 @@ async def on_message(message):
     if message.channel.id in translate_channels:
         trancslate_text = re.sub(r"(https?|ftp)(:\/\/[-_\.!~*\'()a-zA-Z0-9;\/?:\@&=\+$,%#]+)", "" ,message.content)
         trancslate_text = re.sub(r"\:[^:]*\:", "" ,trancslate_text)
+        trancslate_text = trancslate_text.translate(NON_BMP_MAP)
         if len(trancslate_text) == 0:
             return
         deepl_payload['text'] = trancslate_text
