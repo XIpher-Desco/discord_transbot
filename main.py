@@ -161,6 +161,8 @@ async def on_message(message):
         read_text = re.sub(r"!xivoiread", "", message.content)
         # 文字数制限 47 文字
         read_text = re.sub(r"(.{47}).*", r"\1以下略", read_text)
+
+        read_text = message.author.nick + "さん " + read_text
         synthesis_input = texttospeech.SynthesisInput(
             text=read_text)
         voice = texttospeech.VoiceSelectionParams(
@@ -169,7 +171,8 @@ async def on_message(message):
             ssml_gender=texttospeech.SsmlVoiceGender.FEMALE,
         )
         audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.OGG_OPUS
+            audio_encoding=texttospeech.AudioEncoding.OGG_OPUS,
+            pitch=3.0
         )
 
         response = texttospeech_client.synthesize_speech(
@@ -180,7 +183,7 @@ async def on_message(message):
         # The response's audio_content is binary.
         with open("voice.mp3", "wb") as out:
             out.write(response.audio_content)
-            print('Audio content written to file "voice.mp3"')
+            # print('Audio content written to file "voice.mp3"')
         # 読み上げ
 
         message.guild.voice_client.play(discord.FFmpegOpusAudio("voice.mp3"))
