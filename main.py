@@ -165,11 +165,11 @@ async def on_message(message):
             text=read_text)
         voice = texttospeech.VoiceSelectionParams(
             language_code="ja-JP",
-            name="ja-JP-Wavenet-C",
-            ssml_gender=texttospeech.SsmlVoiceGender.MALE,
+            name="ja-JP-Wavenet-B",
+            ssml_gender=texttospeech.SsmlVoiceGender.FEMALE,
         )
         audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.MP3
+            audio_encoding=texttospeech.AudioEncoding.OGG_OPUS
         )
 
         response = texttospeech_client.synthesize_speech(
@@ -183,7 +183,7 @@ async def on_message(message):
             print('Audio content written to file "voice.mp3"')
         # 読み上げ
 
-        message.guild.voice_client.play(discord.FFmpegPCMAudio("voice.mp3"))
+        message.guild.voice_client.play(discord.FFmpegOpusAudio("voice.mp3"))
 
     # 翻訳
     if message.channel.id in translate_channels:
