@@ -116,14 +116,14 @@ async def on_message(message):
     if message.content == '/xitraadd':
         translate_channels.append(message.channel.id)
         write_yaml(CHANNEL_FILE_PATH, translate_channels)
-        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルに登録しました")
+        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳+読み上げチャンネルに登録しました")
         return
 
     elif message.content == '/xitradel':
         translate_channels = [
             i for i in translate_channels if not i == message.channel.id]
         write_yaml(CHANNEL_FILE_PATH, translate_channels)
-        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルから解除しました")
+        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳+読み上げチャンネルから解除しました")
         return
 
     # 翻訳上限確認
@@ -133,10 +133,14 @@ async def on_message(message):
         await message.channel.send(r.text)
         return
 
+    # 以下登録チャンネルでのみ動作する機能 登録チャンネル以外はここでブレイクするように
+    if message.channel.id not in translate_channels:
+        return
+
     # voice channel ログインログアウト
-    elif message.content == "!xivoijoin":
+    if message.content == "!xivoijoin":
         if message.author.voice is None:
-            await message.channel.send("あなたはボイスチャンネルに接続していません。")
+            await message.channel.send("あなたはボイスチャンネルに接続していません。 読み上げ機能を有効にするには、ボイスチャンネルに参加してください。")
             return
         # ボイスチャンネルに接続する
         await message.author.voice.channel.connect()
@@ -144,7 +148,7 @@ async def on_message(message):
 
     elif message.content == "!xivoileave":
         if message.guild.voice_client is None:
-            await message.channel.send("接続していません。")
+            await message.channel.send("私はボイスチャンネルに接続していません。")
             return
 
         # 切断する
@@ -159,6 +163,7 @@ async def on_message(message):
 
         # コマンド部分削除
         read_text = re.sub(r"!xivoiread", "", message.content)
+        read_text = cleanupTexts(read_text, URL_REMOVE=False)
         # 文字数制限 47 文字
         read_text = re.sub(r"(.{47}).*", r"\1以下略", read_text)
 
@@ -189,26 +194,25 @@ async def on_message(message):
         message.guild.voice_client.play(discord.FFmpegOpusAudio("voice.mp3"))
 
     # 翻訳
-    if message.channel.id in translate_channels:
-        # 一部特定文字の場合即時リターン (先頭! とか / のやつ)
-        if re.match(r"[!/]", message.content):
-            return
-        if "m" == message.content:
-            return
+    # 一部特定文字の場合即時リターン (先頭! とか / のやつ)
+    if re.match(r"[!/]", message.content):
+        return
+    elif "m" == message.content:
+        return
 
-        trancslate_text = cleanupTexts(message.content)
+    trancslate_text = cleanupTexts(message.content)
 
-        # 0文字になったら何も返さない
-        if len(trancslate_text) == 0:
-            return
-        deepl_payload['text'] = trancslate_text
-        r = requests.get(
-            "https://api-free.deepl.com/v2/translate", params=deepl_payload)
-        deepl_payload['text'] = ""
-        response_message = r.json()['translations'][0]['text']
-        if ('JA' != r.json()['translations'][0]['detected_source_language']):
-            await message.channel.send(response_message)
-        # await message.channel.send("もうちょっとまってね")
+    # 0文字になったら何も返さない
+    if len(trancslate_text) == 0:
+        return
+    deepl_payload['text'] = trancslate_text
+    r = requests.get(
+        "https://api-free.deepl.com/v2/translate", params=deepl_payload)
+    deepl_payload['text'] = ""
+    response_message = r.json()['translations'][0]['text']
+    if ('JA' != r.json()['translations'][0]['detected_source_language']):
+        await message.channel.send(response_message)
+    # await message.channel.send("もうちょっとまってね")
 
 
 @ client.event
