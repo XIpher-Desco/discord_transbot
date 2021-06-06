@@ -214,9 +214,18 @@ async def on_message(message):
     if len(trancslate_text) == 0:
         return
     deepl_payload['text'] = trancslate_text
+
+    # 日英コマンドが ON ならターゲットを英にする
+    if (ja_to_en):
+        deepl_payload['target_lang'] = 'EN-US'
     r = requests.get(
         "https://api-free.deepl.com/v2/translate", params=deepl_payload)
+
+    # ローカルコピーだから戻さなくても大丈夫だと思うけど...
     deepl_payload['text'] = ""
+    deepl_payload['target_lang'] = 'JA'
+
+    # レスポンスメッセージ（翻訳後）を取得
     response_message = r.json()['translations'][0]['text']
 
     # 日本語翻訳機能ON または、日本語以外なら翻訳文を投げる
