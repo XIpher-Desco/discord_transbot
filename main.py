@@ -194,13 +194,21 @@ async def on_message(message):
         message.guild.voice_client.play(discord.FFmpegOpusAudio("voice.mp3"))
 
     # 翻訳
+    trancslate_ecommand_list = ["/xien"]
+    trancslate_text = message.content
+    ja_to_en = False
     # 一部特定文字の場合即時リターン (先頭! とか / のやつ)
-    if re.match(r"[!/]", message.content):
+    if "m" == trancslate_text:
         return
-    elif "m" == message.content:
+    elif not(re.match(r"/xien", trancslate_text)):
+        # 日本語 -> 英語コマンドの判定
+        ja_to_en = True
+    elif re.match(r"[!/]", trancslate_text):
         return
 
-    trancslate_text = cleanupTexts(message.content)
+    # /xien のコマンドを消すように
+    trancslate_text = re.sub(r"/xien", "", trancslate_text)
+    trancslate_text = cleanupTexts(trancslate_text)
 
     # 0文字になったら何も返さない
     if len(trancslate_text) == 0:
@@ -210,7 +218,9 @@ async def on_message(message):
         "https://api-free.deepl.com/v2/translate", params=deepl_payload)
     deepl_payload['text'] = ""
     response_message = r.json()['translations'][0]['text']
-    if ('JA' != r.json()['translations'][0]['detected_source_language']):
+
+    # 日本語翻訳機能ON または、日本語以外なら翻訳文を投げる
+    if (ja_to_en or ('JA' != r.json()['translations'][0]['detected_source_language'])):
         await message.channel.send(response_message)
     # await message.channel.send("もうちょっとまってね")
 
