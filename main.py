@@ -124,7 +124,11 @@ async def on_message(message):
 
         await message.channel.send("切断しました。")
 
-    if re.match(r"[!xivoiread]", message.content):
+    if re.match(r"!xivoiread", message.content):
+        if message.guild.voice_client is None:
+            await message.channel.send("ボイスチャンネルに接続していないため、再生出来ません")
+            return
+
         read_text = re.sub(r"[!xivoiread]", "", message.content)
         synthesis_input = texttospeech.SynthesisInput(
             text=read_text)
@@ -147,9 +151,7 @@ async def on_message(message):
             out.write(response.audio_content)
             print('Audio content written to file "output.mp3"')
         # 読み上げ
-        if message.guild.voice_client is None:
-            await message.channel.send("接続していません。")
-            return
+
         message.guild.voice_client.play(discord.FFmpegPCMAudio("output.mp3"))
 
     # 翻訳
