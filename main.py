@@ -55,13 +55,41 @@ client = discord.Client()
 
 
 def write_yaml(path, list):
+    """
+    yaml file write
+    """
     with codecs.open(path, 'w', 'utf-8') as f:
         yaml.dump(list, f, encoding='utf-8', allow_unicode=True)
 
 
 def read_yaml(path):
+    """
+    yaml file read
+    """
     with open(path) as f:
         return yaml.safe_load(f)
+
+# 文字列修正
+
+
+def cleanupTexts(text, URL_REMOVE=True):
+    """
+    翻訳や読み上げに不要な文字を削除するよ
+    例えば URL を消すか "URL" という文字列にするよ。
+    あとは :aaaa: や🔥とかいうゴミ消すよ。
+    discord の絵文字 <a0000> <0000> も消すよ。
+    """
+    if URL_REMOVE:
+        text = re.sub(
+            r"(https?|ftp)(:\/\/[-_\.!~*\'()a-zA-Z0-9;\/?:\@&=\+$,%#]+)", "", text)
+    else:
+        text = re.sub(
+            r"(https?|ftp)(:\/\/[-_\.!~*\'()a-zA-Z0-9;\/?:\@&=\+$,%#]+)", "URL", text)
+    # 絵文字スタンプ削除
+    text = re.sub(r"\:[^:]*\:", "", text)
+    text = re.sub(r"\<a*[0-9]+\>", "", text)
+    text = text.translate(NON_BMP_MAP)
+    return text
 
 # 起動時に動作する処理
 
@@ -129,7 +157,10 @@ async def on_message(message):
             await message.channel.send("ボイスチャンネルに接続していないため、再生出来ません")
             return
 
-        read_text = re.sub(r"[!xivoiread]", "", message.content)
+        # コマンド部分削除
+        read_text = re.sub(r"!xivoiread", "", message.content)
+        # 文字数制限 47 文字
+        read_text = re.sub(r"(.{47}).*", r"\1以下略", read_text)
         synthesis_input = texttospeech.SynthesisInput(
             text=read_text)
         voice = texttospeech.VoiceSelectionParams(
@@ -147,12 +178,12 @@ async def on_message(message):
         )
 
         # The response's audio_content is binary.
-        with open("output.mp3", "wb") as out:
+        with open("voice.mp3", "wb") as out:
             out.write(response.audio_content)
-            print('Audio content written to file "output.mp3"')
+            print('Audio content written to file "voice.mp3"')
         # 読み上げ
 
-        message.guild.voice_client.play(discord.FFmpegPCMAudio("output.mp3"))
+        message.guild.voice_client.play(discord.FFmpegPCMAudio("voice.mp3"))
 
     # 翻訳
     if message.channel.id in translate_channels:
@@ -161,14 +192,8 @@ async def on_message(message):
             return
         if "m" == message.content:
             return
-        # URL 削除
-        trancslate_text = re.sub(
-            r"(https?|ftp)(:\/\/[-_\.!~*\'()a-zA-Z0-9;\/?:\@&=\+$,%#]+)", "", message.content)
 
-        # 絵文字スタンプ削除
-        trancslate_text = re.sub(r"\:[^:]*\:", "", trancslate_text)
-        trancslate_text = re.sub(r"\<a*[0-9]+\>", "", trancslate_text)
-        trancslate_text = trancslate_text.translate(NON_BMP_MAP)
+        trancslate_text = cleanupTexts(message.content)
 
         # 0文字になったら何も返さない
         if len(trancslate_text) == 0:
