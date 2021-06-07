@@ -172,7 +172,7 @@ async def on_message(message):
         # 文字数制限 47 文字
         read_text = re.sub(r"(.{47}).*", r"\1以下略", read_text)
 
-        read_text = message.author.nick + "さん " + read_text
+        read_text = message.author.nick + "さん、" + read_text
         synthesis_input = texttospeech.SynthesisInput(
             text=read_text)
         voice = texttospeech.VoiceSelectionParams(
