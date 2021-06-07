@@ -7,8 +7,10 @@ discord は discord.py[voice] を使用
 ## 事前に必要なもの
 ```
 GCP プロジェクト
+ - サービスアカウントと、speech APIとかのライブラリの有効化
 Discord app
 DeepL 開発者アカウント
+ - 無料枠で良い
 ```
 
 ## 追加で必要なファイル それぞれ main.py と同じ場所におく
@@ -22,7 +24,7 @@ DISCORD_BOT_TOKEN:
 DEEPL_API_KEY: 
 ```
 ## 実行
-python3 main.py で動く
+python3 main.py
  
 ## 機能
 ```
