@@ -28,8 +28,6 @@ with open(SECRET_PATH) as f:
     SECRET_DICT = yaml.safe_load(f)
 
 DISCORD_TOKEN = SECRET_DICT['DISCORD_BOT_TOKEN']
-IMAGE_CHANNEL_ID = SECRET_DICT['IMAGE_CHANNEL_ID']
-IMAGE_FOLDER_ID = SECRET_DICT['IMAGE_DRIVE_ID']
 DEEPL_API_KEY = SECRET_DICT['DEEPL_API_KEY']
 
 # 翻訳システムの 事前実行 ここから-------
@@ -51,7 +49,7 @@ texttospeech_client = texttospeech.TextToSpeechClient()
 # ディスコードクライアント生成
 client = discord.Client()
 
-# yaml ファイルの読み書き関数
+# 便利関数（外だししたいけど）
 
 
 def write_yaml(path, list):
@@ -69,7 +67,7 @@ def read_yaml(path):
     with open(path) as f:
         return yaml.safe_load(f)
 
-# 文字列修正
+# 文字列クリーンアップ
 
 
 def cleanupTexts(text, URL_REMOVE=True):
@@ -90,6 +88,13 @@ def cleanupTexts(text, URL_REMOVE=True):
     text = re.sub(r"\<a*[0-9]+\>", "", text)
     text = text.translate(NON_BMP_MAP)
     return text
+
+
+def is_japanese(str):
+    """
+    ひらがな、カタカナがあれば多分日本語　精度悪ければ外す。
+    """
+    return True if re.search(r'[ぁ-んァ-ン]', str) else False
 
 # 起動時に動作する処理
 
@@ -209,29 +214,31 @@ async def on_message(message):
     # /xien のコマンドを消すように
     trancslate_text = re.sub(r"/xien", "", trancslate_text)
     trancslate_text = cleanupTexts(trancslate_text)
-
     # 0文字になったら何も返さない
     if len(trancslate_text) == 0:
         return
-    deepl_payload['text'] = trancslate_text
+    # 日英翻訳ON or 単語が日本語じゃなければ DeepL に行く
+    if (ja_to_en or not(is_japanese(trancslate_text))):
+        deepl_payload['text'] = trancslate_text
 
-    # 日英コマンドが ON ならターゲットを英にする
-    if (ja_to_en):
-        deepl_payload['target_lang'] = 'EN-US'
-    r = requests.get(
-        "https://api-free.deepl.com/v2/translate", params=deepl_payload)
+        # 日英コマンドが ON ならターゲットを英にする
+        if (ja_to_en):
+            deepl_payload['target_lang'] = 'EN-US'
+        # 翻訳リクエスト
+        r = requests.get(
+            "https://api-free.deepl.com/v2/translate", params=deepl_payload)
 
-    # ローカルコピーだから戻さなくても大丈夫だと思うけど...
-    deepl_payload['text'] = ""
-    deepl_payload['target_lang'] = 'JA'
+        # ローカルコピーだから戻さなくても大丈夫だと思うけど...
+        deepl_payload['text'] = ""
+        deepl_payload['target_lang'] = 'JA'
 
-    # レスポンスメッセージ（翻訳後）を取得
-    response_message = r.json()['translations'][0]['text']
+        # レスポンスメッセージ（翻訳後）を取得
+        response_message = r.json()['translations'][0]['text']
 
-    # 日本語翻訳機能ON または、日本語以外なら翻訳文を投げる
-    if (ja_to_en or ('JA' != r.json()['translations'][0]['detected_source_language'])):
-        await message.channel.send(response_message)
-    # await message.channel.send("もうちょっとまってね")
+        # 日本語翻訳機能ON または、日本語以外なら翻訳文を投げる
+        if (ja_to_en or ('JA' != r.json()['translations'][0]['detected_source_language'])):
+            await message.channel.send(response_message)
+        # await message.channel.send("もうちょっとまってね")
 
 
 @ client.event
