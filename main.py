@@ -119,14 +119,14 @@ async def on_message(message):
     # ヘルプ
     if re.match(r"[!/]xihelp", message.content):
         help_messages = r"""```
-        /xitraadd /xitradel 翻訳 チャンネルの追加削除
-        /xitrausage deepl のクオータ確認
-        /xien を頭につけて発言すると、英語に翻訳します
+/xitraadd /xitradel 翻訳 チャンネルの追加削除
+/xitrausage deepl のクオータ確認
+/xien を頭につけて発言すると、英語に翻訳します
 
-        !xivoijoin 実行者が参加しているボイスチャンネルに参加する。 /xitraadd で事前に追加が必要
-        !xivoileave ボイスチャンネルから抜ける
-        !xivoiread を頭に付けて、読んでほしい文字入れると読んでくれる（ベータ中）
-        ```"""
+!xivoijoin 実行者が参加しているボイスチャンネルに参加する。 /xitraadd で事前に追加が必要
+!xivoileave ボイスチャンネルから抜ける
+!xivoiread を頭に付けて、読んでほしい文字入れると読んでくれる（ベータ中）
+```"""
         await message.channel.send(help_messages)
         return
     # 翻訳チャンネル追加と削除
