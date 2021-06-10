@@ -127,6 +127,7 @@ async def on_message(message):
         !xivoileave ボイスチャンネルから抜ける
         !xivoiread を頭に付けて、読んでほしい文字入れると読んでくれる（ベータ中）
         ```"""
+        await message.channel.send(help_messages)
         return
     # 翻訳チャンネル追加と削除
     translate_channels = read_yaml(CHANNEL_FILE_PATH)
