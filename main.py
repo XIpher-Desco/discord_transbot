@@ -218,6 +218,8 @@ async def on_message(message):
     # 一部特定文字の場合即時リターン (先頭! とか / のやつ)
     if "m" == trancslate_text:
         return
+    if "ｍ" == trancslate_text:
+        return
     elif re.match(r"/xien", trancslate_text):
         # 日本語 -> 英語コマンドの判定
         ja_to_en = True
