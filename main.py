@@ -404,24 +404,30 @@ async def on_message(message):
             await message.channel.send(translated_text)
 
     # 読み上げ チャンネルログイン周りコマンド
-    if channel_config[channel_schema.VOICE][channel_schema.ACTIVE]:
         # voice channel ログインログアウト
-        if message.content == "!xivoijoin":
-            if message.author.voice is None:
-                await message.channel.send("あなたはボイスチャンネルに接続していません。 読み上げ機能を有効にするには、ボイスチャンネルに参加してください。")
-                return
-            # ボイスチャンネルに接続する
-            await message.author.voice.channel.connect()
+    if message.content == "!xivoijoin":
+        if message.author.voice is None:
+            await message.channel.send("あなたはボイスチャンネルに接続していません。 読み上げ機能を有効にするには、ボイスチャンネルに参加してください。")
+            return
+        # ボイスチャンネルに接続する
+        await message.author.voice.channel.connect()
+        if not(channel_config[channel_schema.VOICE][channel_schema.ACTIVE]):
+            registered_channels = set_channel_config(
+                message.channel.id, channel_schema.VOICE, channel_schema.ACTIVE, True)
+            await message.channel.send('接続しました。\nチャンネル: ' + str(message.channel.name) + " を読み上げチャンネルに登録しました。\n常時読み上げが必要であれば、!xivoialwadd で常時読み上げチャンネルとして登録してください。")
+        elif not(channel_config[channel_schema.VOICE][channel_schema.ALWAYS]):
+            await message.channel.send("接続しました。\n常時読み上げが必要であれば、!xivoialwadd で常時読み上げチャンネルとして登録してください。")
+        else:
             await message.channel.send("接続しました。")
 
-        elif message.content == "!xivoileave":
-            if message.guild.voice_client is None:
-                await message.channel.send("私はボイスチャンネルに接続していません。")
-                return
+    elif message.content == "!xivoileave":
+        if message.guild.voice_client is None:
+            await message.channel.send("私はボイスチャンネルに接続していません。")
+            return
 
-            # 切断する
-            await message.guild.voice_client.disconnect()
-            await message.channel.send("切断しました。")
+        # 切断する
+        await message.guild.voice_client.disconnect()
+        await message.channel.send("切断しました。")
 
     # 読み上げフラグ
     if read_aloud_flag:
