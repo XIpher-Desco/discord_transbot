@@ -491,14 +491,18 @@ async def on_voice_state_update(member, before, after):
     """
     voice channel から ボット以外いなくなったら切断する
     """
+    # もしかしてこれだけで識別出来る？
+    if not(before.channel.guild.voice_client is None):
+        if after.channel is None:
+            before.channel.guild.voice_client.disconnect()
     # 該当チャンネルに接続してるか確認
-    if not(after.channel.guild.voice_client is None):
-        # bot 以外のメンバーリスト作成
-        non_bot_members = [
-            mem for mem in after.channel.members if mem.bot == False]
-        # メンバーが０人なら、切断
-        if len(non_bot_members) == 0:
-            after.channel.guild.voice_client.disconnect()
+    # if not(after.channel.guild.voice_client is None):
+    #     # bot 以外のメンバーリスト作成
+    #     non_bot_members = [
+    #         mem for mem in after.channel.members if mem.bot == False]
+    #     # メンバーが０人なら、切断
+    #     if len(non_bot_members) == 0:
+    #         after.channel.guild.voice_client.disconnect()
 
 
 @ client.event
