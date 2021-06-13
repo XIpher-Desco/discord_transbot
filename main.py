@@ -256,7 +256,20 @@ async def on_message(message):
         return
     # 翻訳チャンネル追加と削除
     global registered_channels
-    if message.content == '/xitraadd':
+    if message.content == '/xi':
+        channel = message.channel
+        await channel.send('Send me that 👍 reaction, mate')
+
+        def check(reaction, user):
+            return user == message.author and str(reaction.emoji) == '👍'
+
+        try:
+            reaction, user = await client.wait_for('reaction_add', timeout=60.0, check=check)
+        except asyncio.TimeoutError:
+            await channel.send('👎')
+        else:
+            await channel.send('👍')
+    elif message.content == '/xitraadd':
         registered_channels = set_channel_config(
             message.channel.id, channel_schema.TRANSLATE, channel_schema.ACTIVE, True)
         await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルに登録しました")
