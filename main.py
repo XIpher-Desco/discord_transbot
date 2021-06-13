@@ -18,6 +18,7 @@ import random
 from google.cloud import texttospeech
 # from google.oauth2.service_account import Credentials
 # from googleapiclient.http import MediaIoBaseDownload
+from discord.ext import commands
 
 # credential_file_path = "./secret.json"
 # # service account クレデンシャル読み込み
@@ -66,6 +67,7 @@ texttospeech_client = texttospeech.TextToSpeechClient()
 
 # ディスコードクライアント生成
 client = discord.Client()
+bot = commands.Bot(command_prefix='$')
 
 # 便利関数（外だししたいけど）
 
@@ -207,6 +209,11 @@ async def play_voice_task():
 # 起動時に動作する処理
 # 翻訳 channel ファイルの読み込み
 registered_channels = read_yaml(CHANNEL_FILE_PATH)
+
+
+@bot.command()
+async def test(ctx, arg):
+    await ctx.send(arg)
 
 
 @client.event
