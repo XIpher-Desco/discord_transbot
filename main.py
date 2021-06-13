@@ -1,19 +1,22 @@
 """This is a test program."""
-import datetime
+# import datetime
+import asyncio
 from logging import fatal
-import time
-import io
+import os
+# import time
+# import io
 import discord
 import yaml
 import requests
 import codecs
 import re
 import sys
-from apiclient import discovery
-from google.cloud import translate
+import random
+# from apiclient import discovery
+# from google.cloud import translate
 from google.cloud import texttospeech
-from google.oauth2.service_account import Credentials
-from googleapiclient.http import MediaIoBaseDownload
+# from google.oauth2.service_account import Credentials
+# from googleapiclient.http import MediaIoBaseDownload
 
 # credential_file_path = "./secret.json"
 # # service account クレデンシャル読み込み
@@ -136,7 +139,7 @@ def set_channel_config(channel_id, channel_type, active_always, is_active: bool)
     return registered_channel_list
 
 
-def get_voice(read_text):
+def get_voice(read_text, file_path):
     synthesis_input = texttospeech.SynthesisInput(
         text=read_text)
     voice = texttospeech.VoiceSelectionParams(
@@ -155,11 +158,25 @@ def get_voice(read_text):
     )
 
     # The response's audio_content is binary.
-    with open("./voice.mp3", "wb") as out:
+    with open(file_path, "wb") as out:
         out.write(response.audio_content)
 
         # print('Audio content written to file "./voice.mp3"')
         # 読み上げ
+
+
+async def play_voice(voice_channnel, voice_path):
+    """
+    読み上げに失敗したら、待機する・・・多分
+    """
+    event = asyncio.Event()
+    event.set()
+    while True:
+        await event.wait()
+        event.clear()
+        voice_channnel.play(discord.FFmpegPCMAudio(
+            voice_path, after=lambda e: event.set()))
+        os.remove(voice_path)
 # 起動時に動作する処理
 # 翻訳 channel ファイルの読み込み
 registered_channels = read_yaml(CHANNEL_FILE_PATH)
@@ -385,17 +402,20 @@ async def on_message(message):
             read_text = message.author.nick + "さん、" + read_text
         elif type(message.author.name) is str:
             read_text = message.author.name + "さん、" + read_text
-        get_voice(read_text)
-        message.guild.voice_client.play(discord.FFmpegOpusAudio("./voice.mp3"))
+        mp3_file_path = "./voice_" + \
+            str(random.randint(0, 100000)).zfill(6) + ".mp3"
+        get_voice(read_text, mp3_file_path)
+        message.guild.voice_client.play(discord.FFmpegOpusAudio(mp3_file_path), after=lambda e: await play_voice(message.guild.voice_client, mp3_file_path))
 
         if translate_flag:
             read_text = translated_text
             # 文字数制限 47 文字
             read_text = re.sub(r"(.{47}).*", r"\1以下略", read_text)
             read_text = "翻訳、" + read_text
-            get_voice(read_text)
-            message.guild.voice_client.play(
-                discord.FFmpegOpusAudio("./voice.mp3"))
+            mp3_file_path = "./voice_" + \
+                str(random.randint(0, 100000)).zfill(6) + ".mp3"
+            get_voice(read_text, mp3_file_path)
+            message.guild.voice_client.play(discord.FFmpegOpusAudio(mp3_file_path), after=lambda e: await play_voice(message.guild.voice_client, mp3_file_path))
 
 
 @ client.event
