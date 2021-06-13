@@ -495,7 +495,7 @@ async def on_voice_state_update(member, before, after):
     if not(after.channel.guild.voice_client is None):
         # bot 以外のメンバーリスト作成
         non_bot_members = [
-            mem for mem in after.channel.members if after.channel.members.bot == False]
+            mem for mem in after.channel.members if mem.bot == False]
         # メンバーが０人なら、切断
         if len(non_bot_members) == 0:
             after.channel.guild.voice_client.disconnect()
