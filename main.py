@@ -166,23 +166,25 @@ def get_voice(read_text, file_path):
         # 読み上げ
 
 
-async def play_voice(voice_channnel, voice_path, e):
+def play_voice(voice_channnel, voice_path, e):
     """
     読み上げに失敗したら、待機する・・・多分
     """
-
-    event = asyncio.Event()
-    event.set()
-    while True:
-        await event.wait()
-        event.clear()
-        if e == None:
-            os.remove(voice_path)
-            print("delete " + voice_path)
-        return
-        voice_channnel.play(discord.FFmpegPCMAudio(
-            voice_path, after=lambda e: event.set()))
+    if e == None:
         os.remove(voice_path)
+        print("delete " + voice_path)
+        return
+
+    # while True:
+    #     await event.wait()
+    #     event.clear()
+    #     if e == None:
+    #         os.remove(voice_path)
+    #         print("delete " + voice_path)
+    #         return
+    #     voice_channnel.play(discord.FFmpegPCMAudio(
+    #         voice_path, after=lambda e: event.set()))
+    #     os.remove(voice_path)
 # 起動時に動作する処理
 # 翻訳 channel ファイルの読み込み
 registered_channels = read_yaml(CHANNEL_FILE_PATH)
@@ -412,7 +414,8 @@ async def on_message(message):
             str(random.randint(0, 100000)).zfill(6) + ".mp3"
         get_voice(read_text, mp3_file_path)
         message.guild.voice_client.play(discord.FFmpegOpusAudio(
-            mp3_file_path), after=lambda e: (await play_voice(message.guild.voice_client, mp3_file_path, e) for _ in '_').__anext__())
+            mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e))
+        # mp3_file_path), after=lambda e: (await play_voice(message.guild.voice_client, mp3_file_path, e) for _ in '_').__anext__())
         # os.remove(mp3_file_path)
 
         if translate_flag:
@@ -425,7 +428,8 @@ async def on_message(message):
             get_voice(read_text, mp3_file_path)
             sleep(0.1)  # 発言者の読み上げを先にする... Todo なんとかしたい
             message.guild.voice_client.play(discord.FFmpegOpusAudio(
-                mp3_file_path), after=lambda e: (await play_voice(message.guild.voice_client, mp3_file_path, e) for _ in '_').__anext__())
+                mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e))
+            # mp3_file_path), after=lambda e: (await play_voice(message.guild.voice_client, mp3_file_path, e) for _ in '_').__anext__())
         #     os.remove(mp3_file_path)
 
 
