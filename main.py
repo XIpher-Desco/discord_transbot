@@ -7,6 +7,7 @@ from time import sleep
 # import time
 # import io
 import discord
+from discord.ext.commands.bot import Bot
 import yaml
 import requests
 import codecs
@@ -67,7 +68,7 @@ texttospeech_client = texttospeech.TextToSpeechClient()
 
 # ディスコードクライアント生成
 client = discord.Client()
-bot = commands.Bot(command_prefix='/')
+# bot = commands.Bot(command_prefix='/')
 
 # 便利関数（外だししたいけど）
 
@@ -209,13 +210,6 @@ async def play_voice_task():
 # 起動時に動作する処理
 # 翻訳 channel ファイルの読み込み
 registered_channels = read_yaml(CHANNEL_FILE_PATH)
-
-
-@bot.command()
-async def test(ctx, arg):
-    await ctx.send(arg)
-
-bot.run(DISCORD_TOKEN)
 
 
 @client.event
