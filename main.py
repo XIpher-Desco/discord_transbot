@@ -3,6 +3,7 @@
 import asyncio
 from logging import fatal
 import os
+from time import sleep
 # import time
 # import io
 import discord
@@ -165,10 +166,15 @@ def get_voice(read_text, file_path):
         # 読み上げ
 
 
-async def play_voice(voice_channnel, voice_path):
+async def play_voice(voice_channnel, voice_path, e):
     """
     読み上げに失敗したら、待機する・・・多分
     """
+    if e == None:
+        os.remove(voice_path)
+        print("delete " + voice_path)
+        return
+
     event = asyncio.Event()
     event.set()
     while True:
@@ -406,7 +412,7 @@ async def on_message(message):
             str(random.randint(0, 100000)).zfill(6) + ".mp3"
         get_voice(read_text, mp3_file_path)
         message.guild.voice_client.play(discord.FFmpegOpusAudio(
-            mp3_file_path), after=lambda e: print(mp3_file_path, e))
+            mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e))
         # os.remove(mp3_file_path)
 
         if translate_flag:
@@ -417,8 +423,9 @@ async def on_message(message):
             mp3_file_path = "./voice_" + \
                 str(random.randint(0, 100000)).zfill(6) + ".mp3"
             get_voice(read_text, mp3_file_path)
+            sleep(0.1)  # 発言者の読み上げを先にする... Todo なんとかしたい
             message.guild.voice_client.play(discord.FFmpegOpusAudio(
-                mp3_file_path), after=lambda e: print(mp3_file_path, e))
+                mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e))
         #     os.remove(mp3_file_path)
 
 
