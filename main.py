@@ -188,15 +188,16 @@ async def on_message(message):
         if message.author.id in ADMIN_IDS:
             help_messages = r"""```
 翻訳系:
-/xitraadd, /xitradel, /xien
+/xitraadd, /xitradel, /xien, /xichanstats
 読み上げ系:
 !xivoiadd, !xivoidel, !xivoialwadd, !xivoialwdel
 !xivoijoin, !xivoileave, !xire
-            ```"""
+```"""
         else:
             help_messages = r"""```
 /xitraadd /xitradel 翻訳 チャンネルの追加削除
 /xien を頭につけて発言すると、英語に翻訳します
+/xichanstats このチャンネルの登録状況
 
 !xivoiadd, !xivoidel 読み上げチャンネルの追加削除
 !xivoialwadd, !xivoialwdel 常時読み上げチャンネルの追加削除
