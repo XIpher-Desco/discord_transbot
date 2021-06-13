@@ -448,19 +448,19 @@ async def on_message(message):
             # 文字数制限 47 文字
             read_text = re.sub(r"(.{47}).*", r"\1以下略", read_text)
             read_text = "翻訳、" + read_text
-            mp3_file_path = "./voice_" + \
+            mp3_file_path2 = "./voice_" + \
                 str(random.randint(0, 100000)).zfill(6) + ".mp3"
-            get_voice(read_text, mp3_file_path)
+            get_voice(read_text, mp3_file_path2)
             sleep(0.1)  # 発言者の読み上げを先にする... Todo なんとかしたい
             # voices.put(message.guild.voice_client.play(discord.FFmpegOpusAudio(
-            #     mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e)))
+            #     mp3_file_path2), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path2, e)))
             while True:
                 if not(message.guild.voice_client.is_playing()):
                     break
             message.guild.voice_client.play(discord.FFmpegOpusAudio(
-                mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e))
-            # mp3_file_path), after=lambda e: (await play_voice(message.guild.voice_client, mp3_file_path, e) for _ in '_').__anext__())
-        #     os.remove(mp3_file_path)
+                mp3_file_path2), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path2, e))
+            # mp3_file_path2), after=lambda e: (await play_voice(message.guild.voice_client, mp3_file_path2, e) for _ in '_').__anext__())
+        #     os.remove(mp3_file_path2)
 
 
 @ client.event
