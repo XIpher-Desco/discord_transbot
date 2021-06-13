@@ -406,8 +406,8 @@ async def on_message(message):
             str(random.randint(0, 100000)).zfill(6) + ".mp3"
         get_voice(read_text, mp3_file_path)
         message.guild.voice_client.play(discord.FFmpegOpusAudio(
-            mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path))
-        os.remove(mp3_file_path)
+            mp3_file_path), after=lambda e: print(mp3_file_path, e))
+        # os.remove(mp3_file_path)
 
         if translate_flag:
             read_text = translated_text
@@ -418,8 +418,8 @@ async def on_message(message):
                 str(random.randint(0, 100000)).zfill(6) + ".mp3"
             get_voice(read_text, mp3_file_path)
             message.guild.voice_client.play(discord.FFmpegOpusAudio(
-                mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path))
-            os.remove(mp3_file_path)
+                mp3_file_path), after=lambda e: print(mp3_file_path, e))
+        #     os.remove(mp3_file_path)
 
 
 @ client.event
