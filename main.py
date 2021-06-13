@@ -1,5 +1,6 @@
 """This is a test program."""
 import datetime
+from logging import fatal
 import time
 import io
 import discord
@@ -22,27 +23,40 @@ from googleapiclient.http import MediaIoBaseDownload
 
 # drive_service = discovery.build('drive', 'v3', credentials=c)
 
-# 定数読み込み
+# 定数設定
 SECRET_PATH = './secret.yaml'
 with open(SECRET_PATH) as f:
     SECRET_DICT = yaml.safe_load(f)
 
 DISCORD_TOKEN = SECRET_DICT['DISCORD_BOT_TOKEN']
 DEEPL_API_KEY = SECRET_DICT['DEEPL_API_KEY']
+ADMIN_IDS = []
+if 'ADMIN_IDS' in SECRET_DICT:
+    ADMIN_IDS = SECRET_DICT['ADMIN_IDS']
 
 # 翻訳システムの 事前実行 ここから-------
-# 翻訳 channel ファイルの読み込み
 CHANNEL_FILE_PATH = './channel_list.yaml'
-with open(CHANNEL_FILE_PATH) as f:
-    translate_channels = yaml.safe_load(f)
+
 
 # 絵文字削除(BMP 外と呼ばれるヤツを消す魔法)
 NON_BMP_MAP = dict.fromkeys(range(0x10000, sys.maxunicode + 1), '')
+
+VOICE_FILE_PATH = './voice.mp3'
+
+
+class channel_schema:
+    # yaml の構造呼び出しに使う（文字列から変数に入れておきたい）
+    TRANSLATE = 'translate'
+    VOICE = 'voice'
+    ACTIVE = 'active'
+    ALWAYS = 'always'
+
 
 # deepl の key を予め入れておく
 deepl_payload = {'auth_key': DEEPL_API_KEY, 'target_lang': 'JA'}
 # 翻訳システムの 事前実行 ここまで-------
 
+# google texttospeech のクライアント作成
 texttospeech_client = texttospeech.TextToSpeechClient()
 
 
@@ -66,8 +80,6 @@ def read_yaml(path):
     """
     with open(path) as f:
         return yaml.safe_load(f)
-
-# 文字列クリーンアップ
 
 
 def cleanupTexts(text, URL_REMOVE=True):
@@ -96,7 +108,62 @@ def is_japanese(str):
     """
     return True if re.search(r'[ぁ-んァ-ン]', str) else False
 
+
+def get_channel_config(channel_list, channel_id):
+    """
+    チャンネルリストから channel_id 指定して取得する。
+    なんで面倒臭いことしているかと言えば、スキーマを定義したいから一々変数存在チェックしたくない...
+    """
+    if channel_id in channel_list:
+        return channel_list[channel_id]
+    else:
+        return {'voice': {'active': False,
+                          'always': False}, 'translation': {'active': False}}
+
+
+def set_channel_config(channel_id, channel_type, active_always, is_active: bool):
+    """
+    schema 定義が雑ですまんな。 TRANSLATE は ALWAYS は今の所無い
+    channel_type: channel_schema.TRANSLATE, channel_schema.VOICE
+    active_always: channel_schema.ACTIVE, channel_schema.ALWAYS
+    is_active: 指定のものをどうするか
+    """
+    registered_channel_list = read_yaml(CHANNEL_FILE_PATH)
+    target_channel = get_channel_config(registered_channel_list, channel_id)
+    target_channel[channel_type][active_always] = is_active
+    registered_channel_list[channel_id] = target_channel
+    write_yaml(CHANNEL_FILE_PATH, registered_channel_list)
+    return registered_channel_list
+
+
+def get_voice(read_text):
+    synthesis_input = texttospeech.SynthesisInput(
+        text=read_text)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code="ja-JP",
+        name="ja-JP-Wavenet-B",
+        ssml_gender=texttospeech.SsmlVoiceGender.FEMALE,
+    )
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.OGG_OPUS,
+        pitch=3.0
+    )
+
+    response = texttospeech_client.synthesize_speech(
+        request={"input": synthesis_input,
+                 "voice": voice, "audio_config": audio_config}
+    )
+
+    # The response's audio_content is binary.
+    with open("./voice.mp3", "wb") as out:
+        out.write(response.audio_content)
+
+
+        # print('Audio content written to file "./voice.mp3"')
+        # 読み上げ
 # 起動時に動作する処理
+# 翻訳 channel ファイルの読み込み
+registered_channels = read_yaml(CHANNEL_FILE_PATH)
 
 
 @client.event
@@ -120,121 +187,145 @@ async def on_message(message):
     if re.match(r"[!/]xihelp", message.content):
         help_messages = r"""```
 /xitraadd /xitradel 翻訳 チャンネルの追加削除
-/xitrausage deepl のクオータ確認
 /xien を頭につけて発言すると、英語に翻訳します
 
-!xivoijoin 実行者が参加しているボイスチャンネルに参加する。 /xitraadd で事前に追加が必要
-!xivoileave ボイスチャンネルから抜ける
-!xivoiread を頭に付けて、読んでほしい文字入れると読んでくれる（ベータ中）
+!xivoiadd, !xivoidel 読み上げチャンネルの追加削除
+!xivoialwadd, !xivoialwdel 常時読み上げチャンネルの追加削除
+!xivoijoin 実行者が参加しているボイスチャンネルに参加する。 !xivoiadd or !xivoialwaddで事前に追加が必要
+!xivoileave ボイスチャンネルからボットを抜く
+!xire を頭に付けて、読んでほしい文字入れると読んでくれる（ベータ中）
 ```"""
         await message.channel.send(help_messages)
         return
     # 翻訳チャンネル追加と削除
-    translate_channels = read_yaml(CHANNEL_FILE_PATH)
+    global registered_channels
     if message.content == '/xitraadd':
-        translate_channels.append(message.channel.id)
-        write_yaml(CHANNEL_FILE_PATH, translate_channels)
-        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳+読み上げチャンネルに登録しました")
+        registered_channels = set_channel_config(
+            message.channel.id, channel_schema.TRANSLATE, channel_schema.ACTIVE, True)
+        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルに登録しました")
         return
 
     elif message.content == '/xitradel':
-        translate_channels = [
-            i for i in translate_channels if not i == message.channel.id]
-        write_yaml(CHANNEL_FILE_PATH, translate_channels)
-        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳+読み上げチャンネルから解除しました")
+        registered_channels = set_channel_config(
+            message.channel.id, channel_schema.TRANSLATE, channel_schema.ACTIVE, False)
+        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルから解除しました")
+        return
+    # 読み上げチャンネル追加と削除
+    elif message.content == '!xivoiadd':
+        registered_channels = set_channel_config(
+            message.channel.id, channel_schema.VOICE, channel_schema.ACTIVE, True)
+        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を読み上げチャンネルに登録しました")
         return
 
-    # 翻訳上限確認
-    elif message.content == '/xitrausage':
-        r = requests.get("https://api-free.deepl.com/v2/usage",
-                         params=deepl_payload)
-        await message.channel.send(r.text)
+    elif message.content == '!xivoidel':
+        registered_channels = set_channel_config(
+            message.channel.id, channel_schema.VOICE, channel_schema.ACTIVE, False)
+        registered_channels = set_channel_config(
+            message.channel.id, channel_schema.VOICE, channel_schema.ALWAYS, False)
+        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を読み上げチャンネルから解除しました")
         return
+    elif message.content == '!xivoialwadd':
+        registered_channels = set_channel_config(
+            message.channel.id, channel_schema.VOICE, channel_schema.ACTIVE, True)
+        registered_channels = set_channel_config(
+            message.channel.id, channel_schema.VOICE, channel_schema.ALWAYS, True)
+        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を常時読み上げチャンネルに登録しました")
+        return
+
+    elif message.content == '!!xivoialwdel':
+        registered_channels = set_channel_config(
+            message.channel.id, channel_schema.VOICE, channel_schema.ALWAYS, False)
+        await message.channel.send('チャンネル: ' + str(message.channel.name) + " を常時読み上げチャンネルから解除しました")
+        return
+    # 翻訳上限確認 事前に secret.yaml に ADMIN_IDSの記載が必要
+    elif message.content == '/xitrausage':
+        if message.author.id in ADMIN_IDS:
+            r = requests.get("https://api-free.deepl.com/v2/usage",
+                             params=deepl_payload)
+            await message.channel.send(r.text)
+        return
+    # チャンネルのステータス確認
+    elif message.content == '/xichanstats':
+        await message.channel.send(yaml.dump(get_channel_config(registered_channels, message.channel.id)))
 
     # 以下登録チャンネルでのみ動作する機能 登録チャンネル以外はここでブレイクするように
-    if message.channel.id not in translate_channels:
+    if message.channel.id not in registered_channels:
         return
+    # 発言チャンネルの設定を取得
+    channel_config = get_channel_config(
+        registered_channels, message.channel.id)
 
-    # voice channel ログインログアウト
-    if message.content == "!xivoijoin":
-        if message.author.voice is None:
-            await message.channel.send("あなたはボイスチャンネルに接続していません。 読み上げ機能を有効にするには、ボイスチャンネルに参加してください。")
-            return
-        # ボイスチャンネルに接続する
-        await message.author.voice.channel.connect()
-        await message.channel.send("接続しました。")
+    """
+    メモ
+    翻訳がアクティブ -> 基本日本語以外を翻訳して bot が発言
+    翻訳 + 読み上げがアクティブ -> 日本語判定されたらそのまま読み上げ、要翻訳判定されたら翻訳したやつを読む
+    連携に関して考え中
+    """
+    # テキストチェック、キレイ化＋フラグ処理
+    xi_command_list = [r"/xien", r"!xire"]
+    xi_command_regular = '|'.join(xi_command_list)
 
-    elif message.content == "!xivoileave":
-        if message.guild.voice_client is None:
-            await message.channel.send("私はボイスチャンネルに接続していません。")
-            return
-
-        # 切断する
-        await message.guild.voice_client.disconnect()
-
-        await message.channel.send("切断しました。")
-
-    if re.match(r"!xivoiread", message.content):
-        if message.guild.voice_client is None:
-            await message.channel.send("ボイスチャンネルに接続していないため、再生出来ません")
-            return
-
-        # コマンド部分削除
-        read_text = re.sub(r"!xivoiread", "", message.content)
-        read_text = cleanupTexts(read_text, URL_REMOVE=False)
-        # 文字数制限 47 文字
-        read_text = re.sub(r"(.{47}).*", r"\1以下略", read_text)
-
-        read_text = message.author.nick + "さん、" + read_text
-        synthesis_input = texttospeech.SynthesisInput(
-            text=read_text)
-        voice = texttospeech.VoiceSelectionParams(
-            language_code="ja-JP",
-            name="ja-JP-Wavenet-B",
-            ssml_gender=texttospeech.SsmlVoiceGender.FEMALE,
-        )
-        audio_config = texttospeech.AudioConfig(
-            audio_encoding=texttospeech.AudioEncoding.OGG_OPUS,
-            pitch=3.0
-        )
-
-        response = texttospeech_client.synthesize_speech(
-            request={"input": synthesis_input,
-                     "voice": voice, "audio_config": audio_config}
-        )
-
-        # The response's audio_content is binary.
-        with open("voice.mp3", "wb") as out:
-            out.write(response.audio_content)
-            # print('Audio content written to file "voice.mp3"')
-        # 読み上げ
-
-        message.guild.voice_client.play(discord.FFmpegOpusAudio("voice.mp3"))
-
-    # 翻訳
-    trancslate_ecommand_list = ["/xien"]
-    trancslate_text = message.content
+    # 翻訳フラグ
+    translate_flag = channel_config[channel_schema.TRANSLATE][channel_schema.ACTIVE]
+    # 日->英フラグ
     ja_to_en = False
-    # 一部特定文字の場合即時リターン (先頭! とか / のやつ)
-    if "m" == trancslate_text:
-        return
-    if "ｍ" == trancslate_text:
-        return
-    elif re.match(r"/xien", trancslate_text):
-        # 日本語 -> 英語コマンドの判定
-        ja_to_en = True
-    elif re.match(r"[!/]", trancslate_text):
-        return
+    # 読み上げフラグ
+    read_aloud_flag = channel_config[channel_schema.VOICE][channel_schema.ACTIVE]
 
-    # /xien のコマンドを消すように
-    trancslate_text = re.sub(r"/xien", "", trancslate_text)
-    trancslate_text = cleanupTexts(trancslate_text)
-    # 0文字になったら何も返さない
-    if len(trancslate_text) == 0:
-        return
-    # 日英翻訳ON or 単語が日本語じゃなければ DeepL に行く
-    if (ja_to_en or not(is_japanese(trancslate_text))):
-        deepl_payload['text'] = trancslate_text
+    # 指定コマンド以外が入力されていたら、全フラグをfalseに
+    # 特定文字列(あるbotの予備出しコマンド)も全フラグ false に
+    if re.match(xi_command_regular, message.content):
+        pass
+    elif re.match(r"[!/]", message.content):
+        translate_flag = False
+        read_aloud_flag = False
+    elif re.match(r"^[ｍm]$", message.content):
+        translate_flag = False
+        read_aloud_flag = False
+
+    # 翻訳系フラグ
+    # 日本語 -> 英語コマンドの判定
+    if translate_flag:
+        if re.match(r"/xien", message.content):
+            ja_to_en = True
+
+    # 読み上げ系フラグ
+    if read_aloud_flag:
+        # コマンドがついてる or 常時読み上げが有効ならそのまま（True）でなければ False
+        if re.match(r'!xire', message.content):
+            if message.guild.voice_client is None:
+                await message.channel.send("ボイスチャンネルに接続していないため、再生出来ません")
+                read_aloud_flag = False
+        elif channel_config[channel_schema.VOICE][channel_schema.ALWAYS]:
+            pass
+        else:
+            read_aloud_flag = False
+
+    # コマンド列消した文字を入れておく 以降 message.content は使わない
+    cleanup_translate_text = re.sub(
+        xi_command_regular, "", message.content)
+    cleanup_read_aloud_text = re.sub(
+        xi_command_regular, "", message.content)
+    # 翻訳または読み上げが有効なら、文字をキレイにする (URL 差分)
+    if translate_flag:
+        cleanup_translate_text = cleanupTexts(cleanup_translate_text)
+    if read_aloud_flag:
+        cleanup_read_aloud_text = cleanupTexts(
+            cleanup_read_aloud_text, URL_REMOVE=False)
+
+    # 0文字になったらフラグを false
+    if len(cleanup_translate_text) == 0:
+        translate_flag = False
+    if len(cleanup_read_aloud_text) == 0:
+        read_aloud_flag = False
+
+    # 日英翻訳ON or 単語が日本語じゃなければ翻訳有効
+    if (not(ja_to_en) and is_japanese(cleanup_translate_text)):
+        translate_flag = False
+# 以降まだ未調整
+# 翻訳系
+    if translate_flag:
+        deepl_payload['text'] = cleanup_translate_text
 
         # 日英コマンドが ON ならターゲットを英にする
         if (ja_to_en):
@@ -248,12 +339,45 @@ async def on_message(message):
         deepl_payload['target_lang'] = 'JA'
 
         # レスポンスメッセージ（翻訳後）を取得
-        response_message = r.json()['translations'][0]['text']
+        translated_text = r.json()['translations'][0]['text']
 
         # 日本語翻訳機能ON または、日本語以外なら翻訳文を投げる
         if (ja_to_en or ('JA' != r.json()['translations'][0]['detected_source_language'])):
-            await message.channel.send(response_message)
+            await message.channel.send(translated_text)
         # await message.channel.send("もうちょっとまってね")
+
+    # 読み上げ チャンネルログイン周りコマンド
+    if channel_config[channel_schema.VOICE][channel_schema.ACTIVE]:
+        # voice channel ログインログアウト
+        if message.content == "!xivoijoin":
+            if message.author.voice is None:
+                await message.channel.send("あなたはボイスチャンネルに接続していません。 読み上げ機能を有効にするには、ボイスチャンネルに参加してください。")
+                return
+            # ボイスチャンネルに接続する
+            await message.author.voice.channel.connect()
+            await message.channel.send("接続しました。")
+
+        elif message.content == "!xivoileave":
+            if message.guild.voice_client is None:
+                await message.channel.send("私はボイスチャンネルに接続していません。")
+                return
+
+            # 切断する
+            await message.guild.voice_client.disconnect()
+            await message.channel.send("切断しました。")
+
+    # 読み上げフラグ
+    if read_aloud_flag:
+        read_text = cleanup_read_aloud_text
+        # 文字数制限 47 文字
+        read_text = re.sub(r"(.{47}).*", r"\1以下略", read_text)
+        # 先頭に発言者つける、 nick だと 登録してない人が使ったらバグって即死する要修正
+        if type(message.author.nick) is str:
+            read_text = message.author.nick + "さん、" + read_text
+        elif type(message.author.name) is str:
+            read_text = message.author.name + "さん、" + read_text
+        get_voice(read_text)
+        message.guild.voice_client.play(discord.FFmpegOpusAudio("./voice.mp3"))
 
 
 @ client.event
