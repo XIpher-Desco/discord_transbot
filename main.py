@@ -201,6 +201,7 @@ async def play_voice_task():
         play_next_voice.clear()
         current = await voices.get()
         current.start()
+        print("aaaaaa")
         await play_next_voice.wait()
 
 # 起動時に動作する処理
