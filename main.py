@@ -412,7 +412,7 @@ async def on_message(message):
             str(random.randint(0, 100000)).zfill(6) + ".mp3"
         get_voice(read_text, mp3_file_path)
         message.guild.voice_client.play(discord.FFmpegOpusAudio(
-            mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e))
+            mp3_file_path), after=lambda e: (await play_voice(message.guild.voice_client, mp3_file_path, e) for _ in '_').__anext__())
         # os.remove(mp3_file_path)
 
         if translate_flag:
@@ -425,7 +425,7 @@ async def on_message(message):
             get_voice(read_text, mp3_file_path)
             sleep(0.1)  # 発言者の読み上げを先にする... Todo なんとかしたい
             message.guild.voice_client.play(discord.FFmpegOpusAudio(
-                mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e))
+                mp3_file_path), after=lambda e: (await play_voice(message.guild.voice_client, mp3_file_path, e) for _ in '_').__anext__())
         #     os.remove(mp3_file_path)
 
 
