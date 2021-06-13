@@ -257,6 +257,7 @@ async def on_message(message):
     # 翻訳チャンネル追加と削除
     global registered_channels
     if message.content == '/xi':
+        # if message.content.startswith('$thumb'):
         channel = message.channel
         await channel.send('Send me that 👍 reaction, mate')
 
@@ -483,6 +484,21 @@ async def on_message(message):
                 mp3_file_path2), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path2, e))
             # mp3_file_path2), after=lambda e: (await play_voice(message.guild.voice_client, mp3_file_path2, e) for _ in '_').__anext__())
         #     os.remove(mp3_file_path2)
+
+
+@ client.event
+async def on_voice_state_update(member, before, after):
+    """
+    voice channel から ボット以外いなくなったら切断する
+    """
+    # 該当チャンネルに接続してるか確認
+    if not(after.channel.guild.voice_client is None):
+        # bot 以外のメンバーリスト作成
+        non_bot_members = [
+            mem for mem in after.channel.members if after.channel.members.bot == False]
+        # メンバーが０人なら、切断
+        if len(non_bot_members) == 0:
+            after.channel.guild.voice_client.disconnect()
 
 
 @ client.event
