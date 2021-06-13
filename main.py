@@ -488,13 +488,9 @@ async def on_message(message):
 
 @ client.event
 async def on_voice_state_update(member, before, after):
-    """
-    voice channel から ボット以外いなくなったら切断する
-    """
-    # もしかしてこれだけで識別出来る？
-    if not(before.channel.guild.voice_client is None):
-        if after.channel is None:
-            before.channel.guild.voice_client.disconnect()
+    # if not(before.channel.guild.voice_client is None):
+    #     if after.channel is None:
+    #         before.channel.guild.voice_client.disconnect()
     # 該当チャンネルに接続してるか確認
     # if not(after.channel.guild.voice_client is None):
     #     # bot 以外のメンバーリスト作成
@@ -503,6 +499,26 @@ async def on_voice_state_update(member, before, after):
     #     # メンバーが０人なら、切断
     #     if len(non_bot_members) == 0:
     #         after.channel.guild.voice_client.disconnect()
+
+    """
+    voice channel から ボット以外いなくなったら切断する
+    """
+    # before, after でボイスチャンネルの移動前と移動先がわかるらしい
+    # before とは言ってるが、移動後（つまり抜けたあと）のチャンネルの状態。誰も居なくなったら member は 0 人になる
+    if before.channel != after.channel:
+        # before.channelとafter.channelが異なるなら入退室
+        if after.channel:
+            # もし、ボイスチャットが開始されたら
+            pass
+
+        if before.channel:
+            # もし、ボイスチャットが終了したら
+            if not(before.channel.guild.voice_client is None):
+                # 繋がっていれば
+                non_bot_members = [
+                    mem for mem in before.channel.members if mem.bot == False]
+                if len(non_bot_members) == 0:
+                    await before.channel.guild.voice_client.disconnect()
 
 
 @ client.event
