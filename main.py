@@ -340,10 +340,11 @@ async def on_message(message):
     # 読み上げ系フラグ
     if read_aloud_flag:
         # コマンドがついてる or 常時読み上げが有効ならそのまま（True）でなければ False
+        if message.guild.voice_client is None:
+            read_aloud_flag = False
         if re.match(r'!xire', message.content):
             if message.guild.voice_client is None:
                 await message.channel.send("ボイスチャンネルに接続していないため、再生出来ません")
-                read_aloud_flag = False
         elif channel_config[channel_schema.VOICE][channel_schema.ALWAYS]:
             pass
         else:
