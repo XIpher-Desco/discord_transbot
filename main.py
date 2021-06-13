@@ -407,6 +407,7 @@ async def on_message(message):
         get_voice(read_text, mp3_file_path)
         message.guild.voice_client.play(discord.FFmpegOpusAudio(
             mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path))
+        os.remove(mp3_file_path)
 
         if translate_flag:
             read_text = translated_text
@@ -418,6 +419,7 @@ async def on_message(message):
             get_voice(read_text, mp3_file_path)
             message.guild.voice_client.play(discord.FFmpegOpusAudio(
                 mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path))
+            os.remove(mp3_file_path)
 
 
 @ client.event
