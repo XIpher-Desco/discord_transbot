@@ -170,16 +170,16 @@ async def play_voice(voice_channnel, voice_path, e):
     """
     読み上げに失敗したら、待機する・・・多分
     """
-    if e == None:
-        os.remove(voice_path)
-        print("delete " + voice_path)
-        return
 
     event = asyncio.Event()
     event.set()
     while True:
         await event.wait()
         event.clear()
+        if e == None:
+            os.remove(voice_path)
+            print("delete " + voice_path)
+        return
         voice_channnel.play(discord.FFmpegPCMAudio(
             voice_path, after=lambda e: event.set()))
         os.remove(voice_path)
