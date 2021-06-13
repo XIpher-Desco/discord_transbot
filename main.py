@@ -158,7 +158,6 @@ def get_voice(read_text):
     with open("./voice.mp3", "wb") as out:
         out.write(response.audio_content)
 
-
         # print('Audio content written to file "./voice.mp3"')
         # 読み上げ
 # 起動時に動作する処理
@@ -185,7 +184,17 @@ async def on_message(message):
     # ! or / コマンドは上の方で対応
     # ヘルプ
     if re.match(r"[!/]xihelp", message.content):
-        help_messages = r"""```
+        help_messages = ""
+        if message.author.id in ADMIN_IDS:
+            help_messages = r"""```
+翻訳系:
+/xitraadd, /xitradel, /xien
+読み上げ系:
+!xivoiadd, !xivoidel, !xivoialwadd, !xivoialwdel
+!xivoijoin, !xivoileave, !xire
+            ```"""
+        else:
+            help_messages = r"""```
 /xitraadd /xitradel 翻訳 チャンネルの追加削除
 /xien を頭につけて発言すると、英語に翻訳します
 
@@ -232,7 +241,7 @@ async def on_message(message):
         await message.channel.send('チャンネル: ' + str(message.channel.name) + " を常時読み上げチャンネルに登録しました")
         return
 
-    elif message.content == '!!xivoialwdel':
+    elif message.content == '!xivoialwdel':
         registered_channels = set_channel_config(
             message.channel.id, channel_schema.VOICE, channel_schema.ALWAYS, False)
         await message.channel.send('チャンネル: ' + str(message.channel.name) + " を常時読み上げチャンネルから解除しました")
@@ -344,7 +353,6 @@ async def on_message(message):
         # 日本語翻訳機能ON または、日本語以外なら翻訳文を投げる
         if (ja_to_en or ('JA' != r.json()['translations'][0]['detected_source_language'])):
             await message.channel.send(translated_text)
-        # await message.channel.send("もうちょっとまってね")
 
     # 読み上げ チャンネルログイン周りコマンド
     if channel_config[channel_schema.VOICE][channel_schema.ACTIVE]:
@@ -378,6 +386,15 @@ async def on_message(message):
             read_text = message.author.name + "さん、" + read_text
         get_voice(read_text)
         message.guild.voice_client.play(discord.FFmpegOpusAudio("./voice.mp3"))
+
+        if translate_flag:
+            read_text = translated_text
+            # 文字数制限 47 文字
+            read_text = re.sub(r"(.{47}).*", r"\1以下略", read_text)
+            read_text = "翻訳、" + read_text
+            get_voice(read_text)
+            message.guild.voice_client.play(
+                discord.FFmpegOpusAudio("./voice.mp3"))
 
 
 @ client.event
