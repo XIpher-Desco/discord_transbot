@@ -433,10 +433,13 @@ async def on_message(message):
         mp3_file_path = "./voice_" + \
             str(random.randint(0, 100000)).zfill(6) + ".mp3"
         get_voice(read_text, mp3_file_path)
-        voices.put(message.guild.voice_client.play(discord.FFmpegOpusAudio(
-            mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e)))
-        # message.guild.voice_client.play(discord.FFmpegOpusAudio(
-        #     mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e))
+        # voices.put(message.guild.voice_client.play(discord.FFmpegOpusAudio(
+        #     mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e)))
+        while True:
+            if not(message.guild.voice_client.is_playing()):
+                break
+        message.guild.voice_client.play(discord.FFmpegOpusAudio(
+            mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e))
         # mp3_file_path), after=lambda e: (await play_voice(message.guild.voice_client, mp3_file_path, e) for _ in '_').__anext__())
         # os.remove(mp3_file_path)
 
@@ -449,10 +452,13 @@ async def on_message(message):
                 str(random.randint(0, 100000)).zfill(6) + ".mp3"
             get_voice(read_text, mp3_file_path)
             sleep(0.1)  # 発言者の読み上げを先にする... Todo なんとかしたい
-            voices.put(message.guild.voice_client.play(discord.FFmpegOpusAudio(
-                mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e)))
-            # message.guild.voice_client.play(discord.FFmpegOpusAudio(
-            #     mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e))
+            # voices.put(message.guild.voice_client.play(discord.FFmpegOpusAudio(
+            #     mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e)))
+            while True:
+                if not(message.guild.voice_client.is_playing()):
+                    break
+            message.guild.voice_client.play(discord.FFmpegOpusAudio(
+                mp3_file_path), after=lambda e: play_voice(message.guild.voice_client, mp3_file_path, e))
             # mp3_file_path), after=lambda e: (await play_voice(message.guild.voice_client, mp3_file_path, e) for _ in '_').__anext__())
         #     os.remove(mp3_file_path)
 
@@ -463,5 +469,5 @@ async def my_backgound_task(self):
     backgound task event
     """
     pass
-client.loop.create_task(play_voice_task())
+# client.loop.create_task(play_voice_task())
 client.run(DISCORD_TOKEN)
