@@ -174,6 +174,9 @@ def play_voice(voice_channnel, voice_path, e):
         os.remove(voice_path)
         print("delete " + voice_path)
         return
+    sleep(0.1)
+    voice_channnel.play(discord.FFmpegPCMAudio(
+        voice_path), after=lambda e: play_voice(voice_channnel, voice_path, e))
 
     # while True:
     #     await event.wait()
