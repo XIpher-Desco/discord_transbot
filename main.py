@@ -67,7 +67,7 @@ texttospeech_client = texttospeech.TextToSpeechClient()
 
 # ディスコードクライアント生成
 client = discord.Client()
-bot = commands.Bot(command_prefix='$')
+bot = commands.Bot(command_prefix='/')
 
 # 便利関数（外だししたいけど）
 
@@ -214,6 +214,8 @@ registered_channels = read_yaml(CHANNEL_FILE_PATH)
 @bot.command()
 async def test(ctx, arg):
     await ctx.send(arg)
+
+bot.run(DISCORD_TOKEN)
 
 
 @client.event
