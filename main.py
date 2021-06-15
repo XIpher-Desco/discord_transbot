@@ -7,7 +7,6 @@ from time import sleep
 # import time
 # import io
 import discord
-from discord.ext.commands.bot import Bot
 import yaml
 import requests
 import codecs
@@ -19,7 +18,6 @@ import random
 from google.cloud import texttospeech
 # from google.oauth2.service_account import Credentials
 # from googleapiclient.http import MediaIoBaseDownload
-from discord.ext import commands
 
 # credential_file_path = "./secret.json"
 # # service account クレデンシャル読み込み
@@ -280,11 +278,10 @@ async def on_message(message):
         bot_message_text = r"""```
 呼びました？ このメニューに沿って選んでね＞＿＜
 🎙: ボイスチャンネルに接続
+🔇: ボイスチャンネルから切断
 🔁: 翻訳チャンネルに追加, 削除
 📣: 自動読み上げチャンネルに追加, 削除
-ℹ: このチャンネルは、
-翻訳: {TransFrag}, 自動読み上げ: {VoiceFrag}
-だよ！
+ℹ: このチャンネルは、 翻訳🔁: {TransFrag}, 自動読み上げ📣: {VoiceFrag}だよ！
 
 ❌ :このメッセージを閉じる
 ```"""
@@ -296,6 +293,7 @@ async def on_message(message):
             TransFrag=Transfrag, VoiceFrag=Voicefrag)
         bot_send_message = await channel.send(bot_message_text)
         await bot_send_message.add_reaction('🎙')
+        await bot_send_message.add_reaction('🔇')
         await bot_send_message.add_reaction('🔁')
         await bot_send_message.add_reaction('📣')
         await bot_send_message.add_reaction('❌')
@@ -304,7 +302,7 @@ async def on_message(message):
             # 絵文字のチェック
             emoji_str = str(reaction.emoji)
             # 予定通りの絵文字かどうか
-            emoji_is_true = True if emoji_str == '🎙' or emoji_str == '🔁' or emoji_str == '📣' or emoji_str == '❌' else False
+            emoji_is_true = True if emoji_str == '🎙' or emoji_str == '🔁' or emoji_str == '📣' or emoji_str == '❌' or emoji_str == '🔇' else False
             # リアクションした人とメッセージを送った人が同一か確認　（＋絵文字の判定も and でとる）
             return user == message.author and emoji_is_true
         try:
@@ -332,12 +330,12 @@ async def on_message(message):
                 if channel_config[channel_schema.TRANSLATE][channel_schema.ACTIVE]:
                     registered_channels = set_channel_config(
                         message.channel.id, channel_schema.TRANSLATE, channel_schema.ACTIVE, False)
-                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルから解除しました")
+                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルから解除したよ")
                     return
                 else:
                     registered_channels = set_channel_config(
                         message.channel.id, channel_schema.TRANSLATE, channel_schema.ACTIVE, True)
-                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルに登録しました")
+                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルに登録したよ！")
                     return
 
             elif emoji_str == '📣':
@@ -346,15 +344,24 @@ async def on_message(message):
                         message.channel.id, channel_schema.VOICE, channel_schema.ACTIVE, False)
                     registered_channels = set_channel_config(
                         message.channel.id, channel_schema.VOICE, channel_schema.ALWAYS, False)
-                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を読み上げチャンネルから解除しました")
+                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を読み上げチャンネルから解除したよ")
                     return
                 else:
                     registered_channels = set_channel_config(
                         message.channel.id, channel_schema.VOICE, channel_schema.ACTIVE, True)
                     registered_channels = set_channel_config(
                         message.channel.id, channel_schema.VOICE, channel_schema.ALWAYS, True)
-                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を自動読み上げチャンネルに登録しました")
+                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を自動読み上げチャンネルに登録したよ！")
                     return
+            elif emoji_str == '🔇':
+                if message.guild.voice_client is None:
+                    await message.channel.send("私はボイスチャンネルに接続していないみたいだよ＞＜")
+                    return
+
+                # 切断する
+                await message.guild.voice_client.disconnect()
+                await message.channel.send("切断したよ、また呼んでね。")
+                return
             else:
                 await bot_send_message.delete(delay=1.0)
         return
