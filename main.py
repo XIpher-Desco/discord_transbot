@@ -259,7 +259,8 @@ async def on_message(message):
     if message.content == '/xi':
         # if message.content.startswith('$thumb'):
         channel = message.channel
-        await channel.send('Send me that 👍 reaction, mate')
+        send_message = await channel.send('Send me that 👍 reaction, mate')
+        await send_message.add_reaction('👍')
 
         def check(reaction, user):
             return user == message.author and str(reaction.emoji) == '👍'
