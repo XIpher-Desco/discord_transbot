@@ -256,9 +256,10 @@ async def on_message(message):
         return
     # 翻訳チャンネル追加と削除
     global registered_channels
-    if message.content == '/xi':
+    if message.content == '/xitest':
         # if message.content.startswith('$thumb'):
         channel = message.channel
+
         send_message = await channel.send('Send me that 👍 reaction, mate')
         await send_message.add_reaction('👍')
 
@@ -271,6 +272,92 @@ async def on_message(message):
             await channel.send('👎')
         else:
             await channel.send('👍')
+    elif message.content == '/xi':
+        """
+        インタラクティブ版！！！
+        """
+        channel = message.channel
+        bot_message_text = r"""```
+呼びました？ このメニューに沿って選んでね＞＿＜
+🎙: ボイスチャンネルに接続
+🔁: 翻訳チャンネルに追加, 削除
+📣: 自動読み上げチャンネルに追加, 削除
+ℹ: このチャンネルは、
+翻訳: {TransFrag}, 自動読み上げ: {VoiceFrag}
+だよ！
+
+❌ :このメッセージを閉じる
+```"""
+        channel_config = get_channel_config(
+            registered_channels, message.channel.id)
+        Transfrag = "⭕" if channel_config[channel_schema.TRANSLATE][channel_schema.ACTIVE] else "❌"
+        Voicefrag = "⭕" if channel_config[channel_schema.VOICE][channel_schema.ALWAYS] else "❌"
+        bot_message_text = bot_message_text.format(
+            TransFrag=Transfrag, VoiceFrag=Voicefrag)
+        bot_send_message = await channel.send(bot_message_text)
+        await bot_send_message.add_reaction('🎙')
+        await bot_send_message.add_reaction('🔁')
+        await bot_send_message.add_reaction('📣')
+        await bot_send_message.add_reaction('❌')
+
+        def check(reaction, user):
+            # 絵文字のチェック
+            emoji_str = str(reaction.emoji)
+            # 予定通りの絵文字かどうか
+            emoji_is_true = True if emoji_str == '🎙' or emoji_str == '🔁' or emoji_str == '📣' or emoji_str == '❌' else False
+            # リアクションした人とメッセージを送った人が同一か確認　（＋絵文字の判定も and でとる）
+            return user == message.author and emoji_is_true
+        try:
+            reaction, user = await client.wait_for('reaction_add', timeout=30.0, check=check)
+        except asyncio.TimeoutError:
+            # 30 秒反応がなければメッセージを削除
+            await bot_send_message.delete()
+        else:
+            emoji_str = str(reaction.emoji)
+            if emoji_str == '🎙':
+                if message.author.voice is None:
+                    await message.channel.send("あなたはボイスチャンネルに接続してないみたいだよ＞＿＜；")
+                    return
+                # 常時読み上げチャンネルに登録する
+                registered_channels = set_channel_config(
+                    message.channel.id, channel_schema.VOICE, channel_schema.ACTIVE, True)
+                registered_channels = set_channel_config(
+                    message.channel.id, channel_schema.VOICE, channel_schema.ALWAYS, True)
+                # ボイスチャンネルに接続する
+                await message.author.voice.channel.connect()
+                await message.channel.send("接続したよ！")
+                return
+            elif emoji_str == '🔁':
+                # 翻訳チャンネルに登録 or 削除
+                if channel_config[channel_schema.TRANSLATE][channel_schema.ACTIVE]:
+                    registered_channels = set_channel_config(
+                        message.channel.id, channel_schema.TRANSLATE, channel_schema.ACTIVE, False)
+                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルから解除しました")
+                    return
+                else:
+                    registered_channels = set_channel_config(
+                        message.channel.id, channel_schema.TRANSLATE, channel_schema.ACTIVE, True)
+                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルに登録しました")
+                    return
+
+            elif emoji_str == '📣':
+                if channel_config[channel_schema.TRANSLATE][channel_schema.ACTIVE]:
+                    registered_channels = set_channel_config(
+                        message.channel.id, channel_schema.VOICE, channel_schema.ACTIVE, False)
+                    registered_channels = set_channel_config(
+                        message.channel.id, channel_schema.VOICE, channel_schema.ALWAYS, False)
+                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を読み上げチャンネルから解除しました")
+                    return
+                else:
+                    registered_channels = set_channel_config(
+                        message.channel.id, channel_schema.VOICE, channel_schema.ACTIVE, True)
+                    registered_channels = set_channel_config(
+                        message.channel.id, channel_schema.VOICE, channel_schema.ALWAYS, True)
+                    await message.channel.send('チャンネル: ' + str(message.channel.name) + " を自動読み上げチャンネルに登録しました")
+                    return
+            else:
+                await bot_send_message.delete(delay=1.0)
+        return
     elif message.content == '/xitraadd':
         registered_channels = set_channel_config(
             message.channel.id, channel_schema.TRANSLATE, channel_schema.ACTIVE, True)
