@@ -28,6 +28,9 @@ python3 main.py
  
 ## 機能
 ```
+/xi メインメニュー インタラクティブに操作出来ます。
+
+----- 以下コマンド類
 /xitraadd /xitradel 翻訳 チャンネルの追加削除
 /xien を頭につけて発言すると、英語に翻訳します
 /xichanstats このチャンネルの登録状況
@@ -36,5 +39,5 @@ python3 main.py
 !xivoialwadd, !xivoialwdel 常時読み上げチャンネルの追加削除
 !xivoijoin 実行者が参加しているボイスチャンネルに参加する。 !xivoiadd or !xivoialwaddで事前に追加が必要
 !xivoileave ボイスチャンネルからボットを抜く
-!xire を頭に付けて、読んでほしい文字入れると読んでくれる（ベータ中）
+!xire 常時読み上げ無効チャンネルで使用。頭に付けて、読んでほしい文字入れると読んでくれる（ベータ中）
 ```
