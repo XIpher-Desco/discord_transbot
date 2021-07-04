@@ -111,7 +111,7 @@ def is_japanese(str):
     """
     ひらがな、カタカナがあれば多分日本語　精度悪ければ外す。
     """
-    return True if re.search(r'[ぁ-んァ-ン]', str) else False
+    return True if re.search(r'[ぁ-んァ-ンｧ-ﾝ]', str) else False
 
 
 def get_channel_config(channel_list, channel_id):
