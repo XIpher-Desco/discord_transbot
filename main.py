@@ -541,8 +541,8 @@ async def on_message(message):
     # 読み上げフラグ
     if read_aloud_flag:
         read_text = cleanup_read_aloud_text
-        # 文字数制限 47 文字
-        read_text = re.sub(r"(.{47}).*", r"\1以下略", read_text)
+        # 文字数制限 80 文字
+        read_text = re.sub(r"(.{80}).*", r"\1以下略", read_text)
         # 先頭に発言者つける、 nick だと 登録してない人が使ったらバグって即死する要修正
         if type(message.author.nick) is str:
             read_text = message.author.nick + "さん、" + read_text
@@ -563,8 +563,8 @@ async def on_message(message):
 
         if translate_flag:
             read_text = translated_text
-            # 文字数制限 47 文字
-            read_text = re.sub(r"(.{47}).*", r"\1以下略", read_text)
+            # 文字数制限 80 文字
+            read_text = re.sub(r"(.{80}).*", r"\1以下略", read_text)
             read_text = "翻訳、" + read_text
             mp3_file_path2 = "./voice_" + \
                 str(random.randint(0, 100000)).zfill(6) + ".mp3"
