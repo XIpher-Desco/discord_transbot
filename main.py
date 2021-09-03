@@ -1,4 +1,4 @@
-"""This is a test program."""
+#!/usr/bin/env python3
 # import datetime
 import asyncio
 from logging import fatal
