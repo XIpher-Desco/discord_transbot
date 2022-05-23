@@ -233,16 +233,16 @@ async def on_message(message):
         if message.author.id in ADMIN_IDS:
             help_messages = r"""```
 翻訳系:
-!xitraadd, !xitradel, !xien, !xichanstats
+/xitraadd, /xitradel, /xien, /xichanstats
 読み上げ系:
 !xivoiadd, !xivoidel, !xivoialwadd, !xivoialwdel
 !xivoijoin, !xivoileave, !xire
 ```"""
         else:
             help_messages = r"""```
-!xitraadd !xitradel 翻訳 チャンネルの追加削除
-!xien を頭につけて発言すると、英語に翻訳します
-!xichanstats このチャンネルの登録状況
+/xitraadd /xitradel 翻訳 チャンネルの追加削除
+/xien を頭につけて発言すると、英語に翻訳します
+/xichanstats このチャンネルの登録状況
 
 !xivoiadd, !xivoidel 読み上げチャンネルの追加削除
 !xivoialwadd, !xivoialwdel 常時読み上げチャンネルの追加削除
@@ -254,7 +254,7 @@ async def on_message(message):
         return
     # 翻訳チャンネル追加と削除
     global registered_channels
-    if message.content == '!xitest':
+    if message.content == '/xitest':
         # if message.content.startswith('$thumb'):
         channel = message.channel
 
@@ -270,7 +270,7 @@ async def on_message(message):
             await channel.send('👎')
         else:
             await channel.send('👍')
-    elif message.content == '!xi':
+    elif message.content == '/xi':
         """
         インタラクティブ版！！！
         """
@@ -365,13 +365,13 @@ async def on_message(message):
             else:
                 await bot_send_message.delete(delay=1.0)
         return
-    elif message.content == '!xitraadd':
+    elif message.content == '/xitraadd':
         registered_channels = set_channel_config(
             message.channel.id, channel_schema.TRANSLATE, channel_schema.ACTIVE, True)
         await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルに登録しました")
         return
 
-    elif message.content == '!xitradel':
+    elif message.content == '/xitradel':
         registered_channels = set_channel_config(
             message.channel.id, channel_schema.TRANSLATE, channel_schema.ACTIVE, False)
         await message.channel.send('チャンネル: ' + str(message.channel.name) + " を翻訳チャンネルから解除しました")
@@ -404,14 +404,14 @@ async def on_message(message):
         await message.channel.send('チャンネル: ' + str(message.channel.name) + " を常時読み上げチャンネルから解除しました")
         return
     # 翻訳上限確認 事前に secret.yaml に ADMIN_IDSの記載が必要
-    elif message.content == '!xitrausage':
+    elif message.content == '/xitrausage':
         if message.author.id in ADMIN_IDS:
             r = requests.get("https://api-free.deepl.com/v2/usage",
                              params=deepl_payload)
             await message.channel.send(r.text)
         return
     # チャンネルのステータス確認
-    elif message.content == '!xichanstats':
+    elif message.content == '/xichanstats':
         await message.channel.send(yaml.dump(get_channel_config(registered_channels, message.channel.id)))
 
     # 以下登録チャンネルでのみ動作する機能 登録チャンネル以外はここでブレイクするように
@@ -428,7 +428,7 @@ async def on_message(message):
     連携に関して考え中
     """
     # テキストチェック、キレイ化＋フラグ処理
-    xi_command_list = [r"!xien", r"!xire"]
+    xi_command_list = [r"/xien", r"!xire"]
     xi_command_regular = '|'.join(xi_command_list)
 
     # 翻訳フラグ
@@ -448,14 +448,11 @@ async def on_message(message):
     elif re.match(r"^[ｍm]$", message.content):
         translate_flag = False
         read_aloud_flag = False
-    elif re.match(r"^;;", message.content):
-        translate_flag = False
-        read_aloud_flag = False
 
     # 翻訳系フラグ
     # 日本語 -> 英語コマンドの判定
     if translate_flag:
-        if re.match(r"!xien", message.content):
+        if re.match(r"/xien", message.content):
             ja_to_en = True
 
     # 読み上げ系フラグ

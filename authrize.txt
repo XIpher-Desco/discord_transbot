@@ -1,0 +1,9 @@
+https://discord.com/oauth2/authorize?client_id=353893456936042497&permissions=534727096896&response_type=code&scope=bot%20applications.commands
+
+
+https://discord.com/oauth2/authorize?client_id=353893456936042497&permissions=534727096896&redirect_uri=https%3A%2F%2Fdiscord.xipher.info%2FAuth%2Fredirects&response_type=code&scope=bot%20guilds%20applications.commands
+
+https://discord.com/oauth2/authorize?client_id=353893456936042497&scope=applications.commands
+
+
+https://discord.com/api/oauth2/authorize?client_id=353893456936042497&permissions=534727096896&scope=bot%20applications.command
