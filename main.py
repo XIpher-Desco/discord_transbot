@@ -65,7 +65,9 @@ texttospeech_client = texttospeech.TextToSpeechClient()
 
 
 # ディスコードクライアント生成
-client = discord.Client()
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
 # bot = commands.Bot(command_prefix='/')
 
 # 便利関数（外だししたいけど）
